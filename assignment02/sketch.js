@@ -11,14 +11,10 @@ let ballPosX;
 let ballPosY;
 let ballWidth;
 
-let paddle_top;
-let ball_top;
-let paddle_left;
-let ball_left;
-let paddle_bottom;
-let ball_bottom;
-let paddle_right;
-let ball_right;
+let ballColorState;
+let ballRed;
+let ballGreen;
+let ballBlue;
 
 let gameStart = false;
 
@@ -68,18 +64,25 @@ function setup() {
 
     coinX = -(coinWidth * 2)
     coinY = -(coinWidth * 2);
+
+    ballColorState = 0;
+    ballRed = 25;
+    ballGreen = 25;
+    ballBlue = 255;
 }
 
 function draw() {
 
     background(100);
+
+    //Draw background images
     imageMode(CORNER);
     image(backgroundArt, 0, p1);
     image(backgroundArt, 0, p2);
-
+    //Background scroll speed
     p1 += 2;
     p2 += 2;
-
+    //Background looping
     if(p1 >= height){
         p1 = p2 - backgroundArt.height;
     }
@@ -93,8 +96,8 @@ function draw() {
     // Target / Coin collision detection
     if(dist(coinX, coinY, ballPosX, ballPosY) < coinWidth/2 + ballWidth/2){
         coins++;
-        coinX = random(borderWidth+coinWidth, width-borderWidth);
-        coinY = random(borderWidth+coinWidth, height-200-coinWidth);
+        coinX = random(borderWidth+coinWidth/2, width-borderWidth-coinWidth/2);
+        coinY = random(borderWidth+coinWidth/2, height-200-coinWidth/2);
         coinSound.play();
     }
 
@@ -106,17 +109,48 @@ function draw() {
     rect(width-borderWidth,0,width,height);
 
     //Paddle
-    fill(128);
+    fill(255);
     rect(paddleX,paddleY,paddleWidth,paddleHeight);
     //A - left
     if(keyIsDown(65) && !(paddleX <= 20)){
-        paddleX -= 2;
+        paddleX -= 5;
     }
     //D - right
     if(keyIsDown(68) && !(paddleX >= width-paddleWidth-borderWidth)){
-        paddleX += 2;
+        paddleX += 5;
     }
-    
+
+    //Ball Color change
+   switch(ballColorState){
+       case 0: 
+            ballRed++;
+            ballBlue--;
+            if(ballRed >= 255){
+                ballColorState++;
+            }
+            break;
+        case 1: 
+            ballGreen++;
+            ballRed--;
+            if(ballGreen >= 255){
+                ballColorState++;
+            }
+            break;
+        case 2: 
+            ballBlue++;
+            ballGreen--;
+            if(ballBlue >= 255){
+                ballColorState = 0;
+            }
+            break;
+   }
+
+
+    /* console.log('Red: ' + ballRed);
+    console.log('Green: ' + ballGreen);
+    console.log('Blue: ' + ballBlue); */
+
+    fill(ballRed, ballGreen, ballBlue);
     //Ball
     ellipse(ballPosX,ballPosY, ballWidth, ballWidth);
     ballPosX += ballSpeedX;
@@ -138,7 +172,7 @@ function draw() {
     if(!((ballPosY + ballWidth/2) < paddleY || 
         (ballPosY - ballWidth/2) > (paddleY + paddleHeight) || 
         (ballPosX + ballWidth/2) < paddleX ||
-        (ballPosX - ballWidth/2) > (ballPosX + ballWidth/2))){
+        (ballPosX - ballWidth/2) > (paddleX + paddleWidth))){
             bounces++;
             ballSpeedY *= -1;
             bounceSound.play();
@@ -147,10 +181,11 @@ function draw() {
             ballPosY = paddleY - ballWidth/2 - 1;
 
             if(ballPosX < paddleX + paddleWidth/2){
-                console.log('left');
-                
+                ballSpeedX = Math.sign(ballSpeedX) * constrain(map(ballPosX, paddleX, paddleX+paddleWidth/2, 6.5, 1.5), 1.5, 6.5);
+               //ballSpeedY = -constrain(map(ballPosX, paddleX, paddleX+paddleWidth/2, 1.5, 6.5), 1.5, 8);
             } else {
-                console.log('right');
+                ballSpeedX = Math.sign(ballSpeedX) * constrain(map(ballPosX, paddleX+paddleWidth/2, paddleX+paddleWidth, 1.5, 6.5), 1.5, 6.5);
+                //ballSpeedY = -constrain(map(ballPosX, paddleX, paddleX+paddleWidth/2, 6.5, 1.5), 1.5, 6.5);
             }
         } 
         
@@ -162,6 +197,8 @@ function draw() {
         ballSpeedY = 0;
         gameStart = false;
         gameOverSound.play();
+        coinX = -(coinWidth * 2)
+        coinY = -(coinWidth * 2);
     }
 
     //Display scores
@@ -176,8 +213,8 @@ function mouseClicked() {
         coins = 0;
         let r1 = random(2) > .5 ? -1: 1;
         let r2 = random(2) > .5 ? -1: 1;
-        ballSpeedX = random(1,5) * r1;
-        ballSpeedY = random(1,5) * r2;
+        ballSpeedX = random(1.5,6.5) * r1;
+        ballSpeedY = random(1.5,6.5) * r2;
         
         coinX = random(borderWidth+coinWidth/2, width-borderWidth-coinWidth/2);
         coinY = random(borderWidth+coinWidth/2, height-200-coinWidth/2);

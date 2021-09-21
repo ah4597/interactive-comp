@@ -121,16 +121,6 @@ function draw() {
     ellipse(ballPosX,ballPosY, ballWidth, ballWidth);
     ballPosX += ballSpeedX;
     ballPosY += ballSpeedY;
-
-    //variables for collision detection with paddle
-    paddle_top = paddleY;
-    ball_top = ballPosY - ballWidth/2;
-    paddle_left = paddleX;
-    ball_left = ballPosX - ballWidth/2;
-    paddle_bottom = paddleY + paddleHeight;
-    ball_bottom = ballPosY + ballWidth/2;
-    paddle_right = paddleX + paddleWidth;
-    ball_right = ballPosX + ballWidth/2;
     
     //X axis collision detection
     if(ballPosX - ballWidth/2 < borderWidth || ballPosX + ballWidth/2 > width-borderWidth){
@@ -145,15 +135,25 @@ function draw() {
         bounceSound.play();
     }
     //paddle collision detection
-    if(ball_bottom < paddle_top || 
-        ball_top > paddle_bottom || 
-        ball_right < paddle_left ||
-        ball_left > paddle_right){
-        } else {
+    if(!((ballPosY + ballWidth/2) < paddleY || 
+        (ballPosY - ballWidth/2) > (paddleY + paddleHeight) || 
+        (ballPosX + ballWidth/2) < paddleX ||
+        (ballPosX - ballWidth/2) > (ballPosX + ballWidth/2))){
             bounces++;
             ballSpeedY *= -1;
             bounceSound.play();
-        }
+
+            //scuffed way to avoid infinite bounces inside paddle
+            ballPosY = paddleY - ballWidth/2 - 1;
+
+            if(ballPosX < paddleX + paddleWidth/2){
+                console.log('left');
+                
+            } else {
+                console.log('right');
+            }
+        } 
+        
     //Off screen detection - resets game.
     if(ballPosY > height){
         ballPosX = width/2;
@@ -179,8 +179,8 @@ function mouseClicked() {
         ballSpeedX = random(1,5) * r1;
         ballSpeedY = random(1,5) * r2;
         
-        coinX = random(borderWidth+coinWidth, width-borderWidth);
-        coinY = random(borderWidth+coinWidth, height-200-coinWidth);
+        coinX = random(borderWidth+coinWidth/2, width-borderWidth-coinWidth/2);
+        coinY = random(borderWidth+coinWidth/2, height-200-coinWidth/2);
     
     }
 }

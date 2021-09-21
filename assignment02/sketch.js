@@ -113,11 +113,11 @@ function draw() {
     rect(paddleX, paddleY, paddleWidth, paddleHeight);
     //A - left
     if (keyIsDown(65) && !(paddleX <= 20)) {
-        paddleX -= 5;
+        paddleX -= 3;
     }
     //D - right
     if (keyIsDown(68) && !(paddleX >= width - paddleWidth - borderWidth)) {
-        paddleX += 5;
+        paddleX += 3;
     }
 
     //Ball Color change

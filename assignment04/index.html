@@ -1,0 +1,61 @@
+<!doctype html>
+<html>
+
+<head>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.min.js"
+    integrity="sha512-N4kV7GkNv7QR7RX9YF/olywyIgIwNvfEe2nZtfyj73HdjCUkAfOBDbcuJ/cTaN04JKRnw1YG1wnUyNKMsNgg3g=="
+    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/addons/p5.sound.min.js"
+    integrity="sha512-WzkwpdWEMAY/W8WvP9KS2/VI6zkgejR4/KTxTl4qHx0utqeyVE0JY+S1DlMuxDChC7x0oXtk/ESji6a0lP/Tdg=="
+    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="sketch.js"></script>
+  <style>
+    #center {
+      width: 800px;
+      height: 800px;
+      top: 50%;
+      left: 50%;
+      margin: auto;
+      border: 5px solid black;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Robot Factory<br></h1>
+    Save the robots as they arrive into the factory!<br>
+    To save robots you must guide them to the bright red exit door (rectangle) located on the edge of the factory!
+    Every 10 robots you save will cause the door to move to a different location.<br><br> 
+
+    Left-Click the arrows to rotate them clockwise, hold CTRL and left-click to rotate them counter-clockwise, but be careful! 
+    You can only rotate an arrow a <i>MAXIMUM</i> of 5 times, often times less, but with a <i>MINIMUM</i> of once.
+    You won't be able to see how many turns an arrow has left, until it hits 0, so be careful! 
+    The number of times an arrow may be rotated is randomly decided at the beginning of the game, and when an arrow becomes locked it will turn red.<br><br>
+
+    As the game progresses, each robot's mood will decrease, try to save them before their mood deteriorates too much!<br>
+    <ul>
+      <li>The visor-eyed robots' eyes will slowly turn red, when they reach maximum anger they will ignore arrows, and continue in their current direction, creating their own escape route. 
+        They will also move with such force that they will <i>turn</i> any arrows they run across to point in the direction they are heading, causing any other robots behind them to follow! They will also get increasingly faster as they get more and more angry, up to double their original speed.<br></li>
+        <li>The two-eyed robots' eyes will slowly turn blue, when they reach maximum sadness, they will simply give up and die :(. They will also slowly lose motivation to move; making them slower and slower, down to half of their original speed.
+          Each death will cause all robots to decrease their moods even faster, so be careful not to let too many die! <br><br></li>
+      </ul>
+    
+    
+    
+    <i>FYI: Because arrows can spawn with limited amount of turns, this can oftentimes create unfortunate scenarios that are impossible, sorry! <br>
+    PS: Sometimes some impossible scenarios aren't quite impossible, the angry robots can turn even locked arrows! You can <b>sometimes</b> use that to your advantage.</i>
+  <div id="center">
+  </div>
+
+  <p>
+    <i>Extra features added (required):
+      <ol>
+        <li> Locked Arrows - can only click a maxiumum of 5 times, sometimes less.</li>
+        <li> Objective - Save the robots by escorting them to the door!</li>
+        <li> Extra OOP techniques - Mood deterioration of robots (extra properties to each object which changes how it interacts with other objects)</li>
+      </ol>
+    </i>
+  </p>
+</body>
+
+</html>

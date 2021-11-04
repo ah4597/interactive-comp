@@ -46,18 +46,32 @@ Alex Hammer<br>
 
 <h3>Update #1</h3>
 <p>Not much progress, but the beginning steps are in place: 
-    I’ve made the grid, and am currently using an ellipse in place of player art for now. 
+    I've made the grid, and am currently using an ellipse in place of player art for now. 
     The player can ONLY move on their side of the grid, using WASD. 
-    The next steps I will look to implement is ‘attacks’ that cards can use, so I’ll look to implement a computer/dummy to “eat” the attacks during testing. 
+    The next steps I will look to implement is 'attacks' that cards can use, so I'll look to implement a computer/dummy to "eat" the attacks during testing. 
     Then will look to implement these attacks into cards. 
-    The only challenge I’m experiencing currently is getting player movement to be smooth, as sometimes it’ll double move, or won’t move at all. 
-    I think it’s probably because of the way I implemented moving - I’m using a “buffer” every time a key is pressed that I set to 10, and decrease by 1 in every iteration of draw so keys won’t activate too often. 
+    The only challenge I'm experiencing currently is getting player movement to be smooth, as sometimes it'll double move, or won't move at all. 
+    I think it's probably because of the way I implemented moving - I'm using a "buffer" every time a key is pressed that I set to 10, and decrease by 1 in every iteration of draw so keys won't activate too often. 
     Project is still in a very rough, early stage so I will work these out as we go along. <br>
     Screenshot of current grid + ellipse as player - player can only move the 4x4 on the left side.
 </p>
 
 <img src="assets/onestepfromeden_clone_update1.png" alt="Progress Pic #1">
 
+<br><br>
+
+<h3>Update #2</h3>
+<p>
+	It was midterm week so I didn't get as much done as I wanted to, but that's just excuses I guess.<br> 
+    I added some basic cards in, and a way to display the cards (with very temporary art work for now). 
+    Cards are stored in a JSON, with properties: name, type, cost, description, and art. 
+    I'm getting the JSON data through the fetch API, made the preload function an async function, and using async/await to ensure I load in the data before utilizing it.  
+    I'm not sure if the reference to it's art location (in directory) is necessary or useful, but I just have it in case for now.<br>  
+    Also added a 'dummy' class in preparation for when I implement using the cards, I will want the effects to hit the dummies first, before I implement a computer/another player.
+    Also added in an effect that shades in the current square the player is one, and updated the movement a little bit so it's slightly smoother. 
+    Right now the cards are just displayed below the map, and I will have to adjust sizes eventually so the words fit correctly
+</p>
+<img src="assets/onestepfromeden_clone_update2.png" alt="Progress Pic #2">
 <body>
 </body>
 

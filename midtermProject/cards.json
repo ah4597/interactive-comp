@@ -1,0 +1,30 @@
+[
+    {
+        "name": "Damage Up",
+        "type": "buff",
+        "cost": 3,
+        "description": "Increase your damage by 50% for 5 seconds!",
+        "art": "assets/cardart/placeholder_buff.png"
+    },
+    {
+        "name": "Bullet",
+        "type": "attack",
+        "cost": 1,
+        "description": "Shoot a bullet, dealing 10 damage to the first unit struck.",
+        "art": "assets/cardart/placeholder_attack.png"
+    },
+    {
+        "name": "Heal",
+        "type": "buff",
+        "cost": 2,
+        "description": "Heal 50 health.",
+        "art": "assets/cardart/placeholder_buff.png"
+    },
+    {
+        "name": "Block",
+        "type": "block",
+        "cost": 1,
+        "description": "Generate a shield that will block 50 damage. Lasts 5 seconds.",
+        "art": "assets/cardart/placeholder_block.png"
+    }
+]

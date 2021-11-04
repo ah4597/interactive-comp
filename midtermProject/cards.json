@@ -15,7 +15,7 @@
     },
     {
         "name": "Heal",
-        "type": "buff",
+        "type": "heal",
         "cost": 2,
         "description": "Heal 50 health.",
         "art": "assets/cardart/placeholder_buff.png"

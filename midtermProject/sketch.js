@@ -28,6 +28,8 @@ let cardBuffer = 0;
 
 let projectiles = [];
 
+let playerShield = [];
+
 async function preload() {
     /* await fetch("./cards.json")
         .then(response => response.json())
@@ -36,9 +38,10 @@ async function preload() {
         }); */
 
     loadJSON('./cards.json', (obj) => {
-        for(const card of obj){
+        /* for(const card of obj){
             cardData.push(card);
-        }
+        } */
+        cardData = Object.values(obj);
     }
     );
     console.log(cardData);
@@ -83,6 +86,23 @@ function draw() {
     p.display(); 
     p.move();
     p.useCard();
+
+    for(const modifier of p.modifiers){
+        if(!modifier.modified){
+            modifier.modify(p);
+            modifier.modified = true;
+        } else {
+            if(frameCount%60 == 0){
+                modifier.time--;
+            }
+            if(modifier.time <= 0){
+                modifier.unmodify(p);
+                console.log("unbuffed");
+                p.modifiers.splice(p.modifiers.indexOf(modifier), 1);
+            }
+        }
+        
+    }
 
     for(const proj of projectiles){
         proj.display();
@@ -140,13 +160,15 @@ function draw() {
 class Player {
     constructor(currentGridTile) {
         this.currentGridTile = currentGridTile;
-        this.currentMana = 0;
-        this.maxMana = 5;
-        this.manaRegen = .5/60;
+        this.currentMana = 10;
+        this.maxMana = 10;
+        this.manaRegen = 3/60;
         positions[this.currentGridTile] = this;
         this.team = 1;
         this.maxHealth = 1000;
         this.currentHealth = 1000;
+        this.damageModifier = 1;
+        this.modifiers = [];
     }
 
     display() {
@@ -195,7 +217,7 @@ class Player {
             returnPile.push(displayedCards[0]);
             cardBuffer = 15;
             p.currentMana -= displayedCards[0].cost;
-            projectiles.push(new Projectile(0, p.currentGridTile, p.team));
+            deck.play(displayedCards[0], this);
             if(deck.cards.length > 0){
                 displayedCards[0] = deck.cards.pop();
                 //deck.play();
@@ -226,7 +248,7 @@ class Player {
             returnPile.push(displayedCards[1]);
             cardBuffer = 15;
             p.currentMana -= displayedCards[1].cost;
-            projectiles.push(new Projectile(0, p.currentGridTile, p.team));
+            deck.play(displayedCards[1], this);
             if(deck.cards.length > 0){
                 displayedCards[1] = deck.cards.pop();
                 //deck.play();
@@ -262,6 +284,7 @@ class Drone {
         this.maxHealth = 20;
         this.currentHealth = 20;
         this.team = -1;
+        this.damageModifier = 1;
     }
 
     display() {
@@ -272,7 +295,7 @@ class Drone {
     attack(){
         switch(this.type){
             default:
-                projectiles.push(new Projectile(0, this.currentGridTile, this.team));
+                projectiles.push(new Projectile(0, this.currentGridTile, this.team, this.damageModifier));
                 break;
         }
     }
@@ -337,13 +360,37 @@ class Deck {
 
     }
 
-    play(summonGridTile) {
-        projectiles.push(new Projectile(0, summonGridTile));
+    play(card, unit) {
+        switch(card.type){
+            case "attack":
+                projectiles.push(new Projectile(0, unit.currentGridTile, unit.team, unit.damageModifier));
+                break;
+            case "heal":
+                unit.currentHealth += 50;
+                if(unit.currentHealth > unit.maxHealth){
+                    unit.currentHealth = unit.maxHealth;
+                }
+                break;
+            case "buff":
+                console.log("buffed");
+                unit.modifiers.push({
+                    modify: (unit) => {
+                        unit.damageModifier *= 1.5;
+                    },
+                    time: 5,
+                    modified: false,
+                    unmodify: (unit) => {
+                        unit.damageModifier /= 1.5;
+                    }
+                });
+                break;
+        }   
+        
     }
 }
 
 class Projectile {
-    constructor(type, summonGridTile, team) {
+    constructor(type, summonGridTile, team, damageModifier) {
         this.type = type;
         this.team = team;
         this.xPos = team == 1 ? boardxOffset+(((summonGridTile)%4)*(xOffset+1)) : boardxOffset+((summonGridTile%4)*xOffset)*3;
@@ -351,7 +398,7 @@ class Projectile {
         this.speed = 1*team;
         this.damage = 10;
         this.currentGridTile = summonGridTile;
-        
+        this.damageModifer = damageModifier;
     }
 
     display() {
@@ -390,7 +437,7 @@ class Projectile {
     checkCollision() {
         for(let unit of positions){
             if(unit != null && this.currentGridTile == unit.currentGridTile && this.team != unit.team){
-                unit.currentHealth -= this.damage;
+                unit.currentHealth -= this.damage * this.damageModifer;
                 console.log("HIT, UNITS HEALTH IS NOW: " + unit.currentHealth);
                 projectiles.splice(projectiles.indexOf(this), 1);
                 if(unit.currentHealth <= 0){

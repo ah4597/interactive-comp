@@ -20,20 +20,28 @@ let p;
 let dummies = [];
 
 let buffer = 0;
-let cardData;
+let cardData = [];
 let deck;
 let displayedCards = [];
 let returnPile = [];
 let cardBuffer = 0;
 
+let projectiles = [];
 
 async function preload() {
-    await fetch("./cards.json")
+    /* await fetch("./cards.json")
         .then(response => response.json())
         .then(data => {
             cardData = data;
-        });
+        }); */
 
+    loadJSON('./cards.json', (obj) => {
+        for(const card of obj){
+            cardData.push(card);
+        }
+    }
+    );
+    console.log(cardData);
     platformOn = loadImage("assets/Platform_on.png");
     platformOff = loadImage("assets/Platform_off.png");
 
@@ -47,43 +55,21 @@ function setup() {
     angleMode(DEGREES);
     createCanvas(800, 800);
     imageMode(CENTER);
-    for(const card of cardData){
+    /* for(const card of cardData){
         console.log(card);
-    }
+    } */
 
     p = new Player(19);
-
-    /* rectMode(CENTER);
-    for(let i = 0; i < cardData.length; i++){
-        rect(100 + (105*i), 300, 101,151);
-        switch(cardData[i].type){
-            case "attack":
-                image(placeholderAttack, 100 + (105 * i), 300, 100, 150);
-                break;
-            case "block": 
-                image(placeholderBlock, 100 + (105 * i), 300, 100, 150);
-                break;
-            case "buff":
-                image(placeholderBuff, 100 + (105 * i), 300, 100, 150);
-                break;
-        }
-        textAlign(CENTER);
-        text(cardData[i].name, 100 + (105*i), 310);
-        textWrap(WORD);
-        text(cardData[i].description, 100 + (105*i), 320, 100);
-        
-    } */
-    
     
     deck = new Deck(cardData);
     displayedCards.push(deck.cards.pop(), deck.cards.pop());
-    for(let i = 0; i < 4; i++){
+    for(let i = 2; i < 4; i++){
         dummies.push(new Drone(6 + 8*i));
     }
 }
 
 function draw() {
-
+    background(255);
     for(let i = 0; i < positions.length; i++){
         if(positions[i] != null){
             image(platformOn,boardxOffset+(i%8*xOffset), 100+(Math.floor(i/8)*yOffset));
@@ -98,8 +84,16 @@ function draw() {
     p.move();
     p.useCard();
 
+    for(const proj of projectiles){
+        proj.display();
+        proj.checkCollision();
+    }
+
     for(const dummy of dummies){
         dummy.display();
+        if(frameCount%140 == 0){
+            dummy.attack();
+        }
     }
     if(buffer > 0){
         buffer--;
@@ -111,6 +105,17 @@ function draw() {
     textSize(12);
     deck.display();
 
+    //Draw Health Bar
+    rectMode(CORNER);
+    fill(255);
+    rect(0,465, 500, 25);
+    fill(255, 0, 0);
+    rect(0, 465, p.currentHealth*.5, 25);
+    fill(0);
+    textAlign(RIGHT);
+    textFont("Times New Roman");
+    textSize(16);
+    text(Math.floor(p.currentHealth) + "/" +p.maxHealth,250,483);
     //Draw mana bar
     if(p.currentMana < p.maxMana/*  && frameCount%60 == 0 */){
         p.currentMana += p.manaRegen;
@@ -127,7 +132,7 @@ function draw() {
     textAlign(RIGHT);
     textFont("Times New Roman");
     textSize(16);
-    text(Math.floor(p.currentMana) + "/5",125,518);
+    text(Math.floor(p.currentMana) + "/" + p.maxMana,125,518);
 }
   
     
@@ -139,6 +144,9 @@ class Player {
         this.maxMana = 5;
         this.manaRegen = .5/60;
         positions[this.currentGridTile] = this;
+        this.team = 1;
+        this.maxHealth = 1000;
+        this.currentHealth = 1000;
     }
 
     display() {
@@ -165,7 +173,7 @@ class Player {
         }
         //Up
         if(keyIsPressed && keyCode === 87 && buffer === 0 &&
-            this.currentGridTile/8 > 0){
+            this.currentGridTile > 8){
             positions[this.currentGridTile] = null;
             this.currentGridTile -= 8;
             positions[this.currentGridTile] = this;
@@ -187,8 +195,10 @@ class Player {
             returnPile.push(displayedCards[0]);
             cardBuffer = 15;
             p.currentMana -= displayedCards[0].cost;
+            projectiles.push(new Projectile(0, p.currentGridTile, p.team));
             if(deck.cards.length > 0){
                 displayedCards[0] = deck.cards.pop();
+                //deck.play();
             } else {
                 displayedCards[0] = {
                     "name": "Empty",
@@ -216,8 +226,10 @@ class Player {
             returnPile.push(displayedCards[1]);
             cardBuffer = 15;
             p.currentMana -= displayedCards[1].cost;
+            projectiles.push(new Projectile(0, p.currentGridTile, p.team));
             if(deck.cards.length > 0){
                 displayedCards[1] = deck.cards.pop();
+                //deck.play();
             } else {
                 displayedCards[1] = {
                     "name": "Empty",
@@ -244,13 +256,25 @@ class Player {
 
 class Drone {
     constructor(currentGridTile) {
+        this.type = 0;
         this.currentGridTile = currentGridTile;
         positions[this.currentGridTile] = this;
+        this.maxHealth = 20;
+        this.currentHealth = 20;
+        this.team = -1;
     }
 
     display() {
         fill(0);
         ellipse(boardxOffset+((this.currentGridTile%4)*xOffset)*3, 95+((Math.floor(this.currentGridTile/8)*yOffset)), 15,15);
+    }
+    
+    attack(){
+        switch(this.type){
+            default:
+                projectiles.push(new Projectile(0, this.currentGridTile, this.team));
+                break;
+        }
     }
 }
 
@@ -311,5 +335,69 @@ class Deck {
         textSize(24);
         text(returnPile.length, 550, 300);
 
+    }
+
+    play(summonGridTile) {
+        projectiles.push(new Projectile(0, summonGridTile));
+    }
+}
+
+class Projectile {
+    constructor(type, summonGridTile, team) {
+        this.type = type;
+        this.team = team;
+        this.xPos = team == 1 ? boardxOffset+(((summonGridTile)%4)*(xOffset+1)) : boardxOffset+((summonGridTile%4)*xOffset)*3;
+        this.yPos = team == 1 ? 95+((Math.floor((summonGridTile + 1)/8)*yOffset)) : 95+((Math.floor(summonGridTile/8)*yOffset));
+        this.speed = 1*team;
+        this.damage = 10;
+        this.currentGridTile = summonGridTile;
+        
+    }
+
+    display() {
+        if(this.xPos >= 450 || this.xPos < 200){
+            projectiles.splice(projectiles.indexOf(this), 1);
+        }
+        switch(this.type){
+            case 0:
+                console.log("0");
+                fill(255, 0, 0);
+                ellipse(this.xPos, this.yPos, 10, 10);
+                this.xPos += this.speed;
+                break;
+            default: 
+                console.log("1");
+                fill(255, 0, 0);
+                ellipse(this.xPos, this.yPos, 10, 10);
+                this.xPos += this.speed;
+                break;
+        }
+        switch(this.team){
+            case 1:
+                if(this.xPos%32 == 0){
+                this.currentGridTile++;
+                }
+                break;
+            case -1:
+                if(this.xPos%32 == 0){
+                    this.currentGridTile--;
+                }
+                break;
+        }
+        
+    }
+
+    checkCollision() {
+        for(let unit of positions){
+            if(unit != null && this.currentGridTile == unit.currentGridTile && this.team != unit.team){
+                unit.currentHealth -= this.damage;
+                console.log("HIT, UNITS HEALTH IS NOW: " + unit.currentHealth);
+                projectiles.splice(projectiles.indexOf(this), 1);
+                if(unit.currentHealth <= 0){
+                    dummies.splice(dummies.indexOf(unit), 1);
+                    positions[positions.indexOf(unit)] = null;
+                }
+            }
+        }
     }
 }

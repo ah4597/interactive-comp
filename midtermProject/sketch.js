@@ -34,8 +34,8 @@ let round = 0;
 let paused = false;
 //0 = Game not started
 //1 = Game has started, can be paused with the above bool
-//2 = Game Over via HP depleted
-//3 = Game Over via defeating Boss
+//2 = Game Over via HP depleted -- Lose
+//3 = Game Over via defeating Boss -- Win
 let gameState = 0;
 
 async function preload() {
@@ -128,8 +128,36 @@ function draw() {
             frameCount = 0;
             gameState = 1;
         }
-    } else if(gameState == 1 && !paused) {
+    } 
+    //Core Game Loop 
+    else if(gameState == 1 && !paused) {
         background(255);
+
+        //Pause Button
+        if (mouseX >= 325 && mouseX <= 425 &&
+            mouseY >= 650 && mouseY <= 700) {
+                fill(150);
+            } else {
+                fill(255);  
+            }
+        
+        rect(325, 650, 100, 50);
+
+        textSize(24);
+        fill(0);
+        text("Pause", 350, 685);
+        
+        if (mouseX >= 325 && mouseX <= 425 &&
+            mouseY >= 650 && mouseY <= 700 &&
+            mouseIsPressed) {
+                paused = true;
+            }
+
+        //Check player health
+        if(p.currentHealth <=  0){
+            gameState = 2;
+        }
+
         for(let i = 0; i < positions.length; i++){
             if(positions[i] != null){
                 image(platformOn,boardxOffset+(i%8*xOffset), 100+(Math.floor(i/8)*yOffset));
@@ -218,6 +246,71 @@ function draw() {
         textFont("Times New Roman");
         textSize(16);
         text(Math.floor(p.currentMana) + "/" + p.maxMana,125,518);
+    } 
+    //Game Over -- Lose
+    else if(gameState == 2){
+        background(100);
+        fill(0);
+        textSize(36);
+        text("Game Over", 285, 200);
+        fill(255);
+
+        /* for (let i = 1; i <= 3; i++) {
+
+            rect(300, 175 + (i * 75), 150, 50);
+
+        } */
+       /*  if (mouseX >= 325 && mouseX <= 425 &&
+            mouseY >= 650 && mouseY <= 700) {
+                fill(150);
+            } else {
+                fill(255);  
+            }
+        
+        rect(325, 650, 100, 50);
+
+        textSize(24);
+        fill(0);
+        text("Start", 350, 685); */
+    }
+    //Game Over -- Win 
+    else if(gameState == 3){
+        background(100);
+        fill(0);
+        textSize(36);
+        text("Game Over", 285, 200);
+        fill(255);
+    } 
+    //gameState == 1 && paused
+    else if(paused){
+        rectMode(CORNER);
+        fill(50);
+        //Cover Screen with an opaque gray rect
+        rect(0, 0, width, height, 100);
+
+        textAlign(CENTER);
+        textSize(72);
+        text("PAUSED", width/2, height/2);
+
+        //Unpause Button
+        if (mouseX >= 325 && mouseX <= 425 &&
+            mouseY >= 650 && mouseY <= 700) {
+                fill(150);
+            } else {
+                fill(255);  
+            }
+        
+        rect(325, 650, 100, 50);
+
+        textSize(24);
+        fill(0);
+        text("Unpause", 350, 685);
+        
+        if (mouseX >= 325 && mouseX <= 425 &&
+            mouseY >= 650 && mouseY <= 700 &&
+            mouseIsPressed) {
+                paused = false;
+            }
     }
 }
   

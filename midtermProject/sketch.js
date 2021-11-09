@@ -1,15 +1,13 @@
 let platformOn, platformOff;
+
+//Board positioning variables
 let xOffset = 32;
 let yOffset = 22;
 let boardxOffset = 200;
 
 let placeholderAttack, placeholderBlock, placeholderBuff;
 
-/* let grid = [[ 0,  1,  2,  3,  4,  5,  6,  7],
-            [ 8,  9, 10, 11, 12, 13, 14, 15],
-            [16, 17, 18, 19, 20, 21, 22, 23], 
-            [24, 25, 26, 27, 28, 29, 30, 31]]; */
-
+//Used to track where units are on the grid
 let positions = [null, null, null, null, null, null, null, null,
                 null, null, null, null, null, null, null, null,
                 null, null, null, null, null, null, null, null,
@@ -30,21 +28,22 @@ let projectiles = [];
 
 let playerShield = [];
 
+let prevPlayerGridTile;
+
+let round = 0;
+let paused = false;
+//0 = Game not started
+//1 = Game has started, can be paused with the above bool
+//2 = Game Over via HP depleted
+//3 = Game Over via defeating Boss
+let gameState = 0;
+
 async function preload() {
-    /* await fetch("./cards.json")
-        .then(response => response.json())
-        .then(data => {
-            cardData = data;
-        }); */
 
     loadJSON('./cards.json', (obj) => {
-        /* for(const card of obj){
-            cardData.push(card);
-        } */
         cardData = Object.values(obj);
-    }
-    );
-    console.log(cardData);
+    });
+    
     platformOn = loadImage("assets/Platform_on.png");
     platformOff = loadImage("assets/Platform_off.png");
 
@@ -58,101 +57,168 @@ function setup() {
     angleMode(DEGREES);
     createCanvas(800, 800);
     imageMode(CENTER);
-    /* for(const card of cardData){
-        console.log(card);
-    } */
-
     p = new Player(19);
     
     deck = new Deck(cardData);
     displayedCards.push(deck.cards.pop(), deck.cards.pop());
-    for(let i = 2; i < 4; i++){
-        dummies.push(new Drone(6 + 8*i));
+    for(let i = 4; i < 17; i+=9){
+        if(i > 8){
+            dummies.push(new Drone(i, 1));
+        } else {
+            dummies.push(new Drone(i));
+        }
+        
     }
+
+    let test = positions.map((el, ind) => {
+        if(el === null) {
+            return ind;
+        }
+    }).filter(x => x !== undefined && x%8 > 3);
+    console.log(test);
 }
 
 function draw() {
-    background(255);
-    for(let i = 0; i < positions.length; i++){
-        if(positions[i] != null){
-            image(platformOn,boardxOffset+(i%8*xOffset), 100+(Math.floor(i/8)*yOffset));
-        } else {
-            image(platformOff,boardxOffset+(i%8*xOffset), 100+(Math.floor(i/8)*yOffset));
-        }
-        
-    }
+    if(gameState == 0) {
+        background(100);
+        fill(0);
+        textSize(36);
+        text("Game Menu", 285, 200);
+        fill(255);
 
+        /* for (let i = 1; i <= 3; i++) {
 
-    p.display(); 
-    p.move();
-    p.useCard();
+            rect(300, 175 + (i * 75), 150, 50);
 
-    for(const modifier of p.modifiers){
-        if(!modifier.modified){
-            modifier.modify(p);
-            modifier.modified = true;
-        } else {
-            if(frameCount%60 == 0){
-                modifier.time--;
+        } */
+        if (mouseX >= 325 && mouseX <= 425 &&
+            mouseY >= 650 && mouseY <= 700) {
+                fill(150);
+            } else {
+                fill(255);  
             }
-            if(modifier.time <= 0){
-                modifier.unmodify(p);
-                console.log("unbuffed");
-                p.modifiers.splice(p.modifiers.indexOf(modifier), 1);
+        
+        rect(325, 650, 100, 50);
+
+        textSize(24);
+        fill(0);
+        text("Start", 350, 685);
+
+        /* if (mouseX >= 300 && mouseX <= 450 &&
+        mouseY >= 250 && mouseY <= 300 &&
+        mouseIsPressed) {
+        difficulty = 1;
+        }
+        if (mouseX >= 300 && mouseX <= 450 &&
+        mouseY >= 325 && mouseY <= 375 &&
+        mouseIsPressed) {
+        difficulty = 2;
+        }
+        if (mouseX >= 300 && mouseX <= 450 &&
+        mouseY >= 400 && mouseY <= 450 &&
+        mouseIsPressed) {
+        difficulty = 3;
+        } */
+
+        
+
+        if (mouseX >= 325 && mouseX <= 425 &&
+        mouseY >= 650 && mouseY <= 700 &&
+        mouseIsPressed) {
+            frameCount = 0;
+            gameState = 1;
+        }
+    } else if(gameState == 1 && !paused) {
+        background(255);
+        for(let i = 0; i < positions.length; i++){
+            if(positions[i] != null){
+                image(platformOn,boardxOffset+(i%8*xOffset), 100+(Math.floor(i/8)*yOffset));
+            } else {
+                image(platformOff,boardxOffset+(i%8*xOffset), 100+(Math.floor(i/8)*yOffset));
+            }
+            
+        }
+        p.display(); 
+        p.move();
+        p.useCard();
+        if(prevPlayerGridTile != p.currentGridTile && frameCount%120 == 0){
+            prevPlayerGridTile = p.currentGridTile;
+        }
+
+        for(const modifier of p.modifiers){
+            if(!modifier.modified){
+                modifier.modify(p);
+                modifier.modified = true;
+            } else {
+                if(frameCount%60 == 0){
+                    modifier.time--;
+                }
+                if(modifier.time <= 0){
+                    modifier.unmodify(p);
+                    console.log("unbuffed");
+                    p.modifiers.splice(p.modifiers.indexOf(modifier), 1);
+                }
+            }
+            
+        }
+
+        for(const proj of projectiles){
+            proj.display();
+            proj.checkCollision();
+        }
+
+        for(const dummy of dummies){
+            dummy.display();
+            if(frameCount%160 == 0){
+                dummy.move();
+            }
+            if(frameCount%140 == 0){
+                dummy.attack();
             }
         }
+
+        if(buffer > 0){
+            buffer--;
+        }
+
+        if(cardBuffer > 0){
+            cardBuffer--;
+        }
+
+        //draw Cards
+        textSize(12);
+        deck.display();
+
+        //Draw Health Bar
+        rectMode(CORNER);
+        fill(255);
+        rect(0,465, 500, 25);
+        fill(255, 0, 0);
+        rect(0, 465, p.currentHealth*.5, 25);
+        fill(0);
+        textAlign(RIGHT);
+        textFont("Times New Roman");
+        textSize(16);
+        text(Math.floor(p.currentHealth) + "/" +p.maxHealth,250,483);
         
-    }
-
-    for(const proj of projectiles){
-        proj.display();
-        proj.checkCollision();
-    }
-
-    for(const dummy of dummies){
-        dummy.display();
-        if(frameCount%140 == 0){
-            dummy.attack();
+        //Draw mana bar
+        if(p.currentMana < p.maxMana/*  && frameCount%60 == 0 */){
+            p.currentMana += p.manaRegen;
+            if(p.currentMana > p.maxMana){
+                p.currentMana = p.maxMana;
+            }
         }
+        rectMode(CORNER);
+        fill(255);
+        rect(0,500, 250, 25);
+        fill(115, 169, 255);
+        rect(0,500, p.currentMana*50 ,25);
+        fill(0);
+        textAlign(RIGHT);
+        textFont("Times New Roman");
+        textSize(16);
+        text(Math.floor(p.currentMana) + "/" + p.maxMana,125,518);
     }
-    if(buffer > 0){
-        buffer--;
-    }
-    if(cardBuffer > 0){
-        cardBuffer--;
-    }
-    //draw Cards
-    textSize(12);
-    deck.display();
-
-    //Draw Health Bar
-    rectMode(CORNER);
-    fill(255);
-    rect(0,465, 500, 25);
-    fill(255, 0, 0);
-    rect(0, 465, p.currentHealth*.5, 25);
-    fill(0);
-    textAlign(RIGHT);
-    textFont("Times New Roman");
-    textSize(16);
-    text(Math.floor(p.currentHealth) + "/" +p.maxHealth,250,483);
-    //Draw mana bar
-    if(p.currentMana < p.maxMana/*  && frameCount%60 == 0 */){
-        p.currentMana += p.manaRegen;
-        if(p.currentMana > p.maxMana){
-            p.currentMana = p.maxMana;
-        }
-    }
-    rectMode(CORNER);
-    fill(255);
-    rect(0,500, 250, 25);
-    fill(115, 169, 255);
-    rect(0,500, p.currentMana*50 ,25);
-    fill(0);
-    textAlign(RIGHT);
-    textFont("Times New Roman");
-    textSize(16);
-    text(Math.floor(p.currentMana) + "/" + p.maxMana,125,518);
 }
   
     
@@ -161,8 +227,8 @@ class Player {
     constructor(currentGridTile) {
         this.currentGridTile = currentGridTile;
         this.currentMana = 10;
-        this.maxMana = 10;
-        this.manaRegen = 3/60;
+        this.maxMana = 5;
+        this.manaRegen = .5/60;
         positions[this.currentGridTile] = this;
         this.team = 1;
         this.maxHealth = 1000;
@@ -181,6 +247,7 @@ class Player {
         if(keyIsPressed && keyCode === 65 && buffer === 0 &&
             this.currentGridTile%8 != 0){
             positions[this.currentGridTile] = null;
+            prevPlayerGridTile = this.currentGridTile;
             this.currentGridTile--;
             positions[this.currentGridTile] = this;
             buffer = 15;
@@ -189,14 +256,16 @@ class Player {
         if(keyIsPressed && keyCode === 68 && buffer === 0 &&
             this.currentGridTile%8 < 3){
             positions[this.currentGridTile] = null;
+            prevPlayerGridTile = this.currentGridTile;
             this.currentGridTile++;
             positions[this.currentGridTile] = this;
             buffer = 15;
         }
         //Up
         if(keyIsPressed && keyCode === 87 && buffer === 0 &&
-            this.currentGridTile > 8){
+            this.currentGridTile >= 8){
             positions[this.currentGridTile] = null;
+            prevPlayerGridTile = this.currentGridTile;
             this.currentGridTile -= 8;
             positions[this.currentGridTile] = this;
             buffer = 15;
@@ -205,6 +274,7 @@ class Player {
         if(keyIsPressed && keyCode === 83 && buffer === 0 &&
             this.currentGridTile/8 < 3){
             positions[this.currentGridTile] = null;
+            prevPlayerGridTile = this.currentGridTile;
             this.currentGridTile += 8;
             positions[this.currentGridTile] = this;
             buffer = 15;
@@ -277,8 +347,8 @@ class Player {
 }
 
 class Drone {
-    constructor(currentGridTile) {
-        this.type = 0;
+    constructor(currentGridTile, type) {
+        this.type = type || 0;
         this.currentGridTile = currentGridTile;
         positions[this.currentGridTile] = this;
         this.maxHealth = 20;
@@ -288,8 +358,12 @@ class Drone {
     }
 
     display() {
-        fill(0);
-        ellipse(boardxOffset+((this.currentGridTile%4)*xOffset)*3, 95+((Math.floor(this.currentGridTile/8)*yOffset)), 15,15);
+        if(this.type == 1){
+            fill(0);
+        } else {
+            fill(255);
+        }
+        ellipse(boardxOffset+(((this.currentGridTile%4)*xOffset)+(4*xOffset)), 95+((Math.floor(this.currentGridTile/8)*yOffset)), 15,15);
     }
     
     attack(){
@@ -298,6 +372,102 @@ class Drone {
                 projectiles.push(new Projectile(0, this.currentGridTile, this.team, this.damageModifier));
                 break;
         }
+    }
+
+    move() {
+        let newTile;
+        switch(this.type){
+            //Tries to chase player
+            case 2:
+                switch(prevPlayerGridTile){
+                    case 0:
+                    case 1:
+                    case 2:
+                    case 3:
+                        newTile = random([4, 5, 6, 7]);
+                        if(positions[newTile] == null){
+                            positions[this.currentGridTile] = null;
+                            this.currentGridTile = newTile;
+                            positions[this.currentGridTile] = this;
+                        }
+                        break;
+                    case 8:
+                    case 9:
+                    case 10:
+                    case 11:
+                        newTile = random([12, 13, 14, 15]);
+                        if(positions[newTile] == null){
+                            positions[this.currentGridTile] = null;
+                            this.currentGridTile = newTile;
+                            positions[this.currentGridTile] = this;
+                        }
+                        break;
+                    case 16:
+                    case 17:
+                    case 18:
+                    case 19:
+                        newTile = random([20, 21, 22, 23]);
+                        if(positions[newTile] == null){
+                            positions[this.currentGridTile] = null;
+                            this.currentGridTile = newTile;
+                            positions[this.currentGridTile] = this;
+                        }
+                        break;
+                    case 24:
+                    case 25:
+                    case 26:
+                    case 27:
+                        newTile = random([28, 29, 30, 31]);
+                        if(positions[newTile] == null){
+                            positions[this.currentGridTile] = null;
+                            this.currentGridTile = newTile;
+                            positions[this.currentGridTile] = this;
+                        }
+                        break;
+                }
+                break;
+            //Randomly moves somewhere on the grid thats unoccupied
+            case 1:
+                newTile = random(positions.map((el, ind) => {
+                        if(el === null) {
+                            return ind;
+                        }
+                    }).filter(x => x !== undefined && x%8 > 3)
+                );
+                positions[this.currentGridTile] = null;
+                this.currentGridTile = newTile;
+                positions[this.currentGridTile] = this;
+                break;
+            //Randomly moves up, down, left or right, from it's current position
+            case 0:
+                const newTiles = [];
+                if(this.currentGridTile < 22) {
+                    newTiles.push(this.currentGridTile + 8);
+                }
+
+                if(this.currentGridTile > 8) {
+                    newTiles.push(this.currentGridTile - 8);
+                }
+
+                if(this.currentGridTile%8 > 4){
+                    newTiles.push(this.currentGridTile - 1);
+                }
+
+                if(this.currentGridTile%8 < 7){
+                    newTiles.push(this.currentGridTile + 1);
+                }
+
+                newTile = random(newTiles);
+                if(positions[newTile] == null){
+                    positions[this.currentGridTile] = null;
+                    this.currentGridTile = newTile;
+                    positions[this.currentGridTile] = this;
+                }
+                break;
+        }
+        
+        
+        
     }
 }
 
@@ -407,13 +577,13 @@ class Projectile {
         }
         switch(this.type){
             case 0:
-                console.log("0");
+                //console.log("0");
                 fill(255, 0, 0);
                 ellipse(this.xPos, this.yPos, 10, 10);
                 this.xPos += this.speed;
                 break;
             default: 
-                console.log("1");
+                //console.log("1");
                 fill(255, 0, 0);
                 ellipse(this.xPos, this.yPos, 10, 10);
                 this.xPos += this.speed;
@@ -438,7 +608,7 @@ class Projectile {
         for(let unit of positions){
             if(unit != null && this.currentGridTile == unit.currentGridTile && this.team != unit.team){
                 unit.currentHealth -= this.damage * this.damageModifer;
-                console.log("HIT, UNITS HEALTH IS NOW: " + unit.currentHealth);
+                //console.log("HIT, UNITS HEALTH IS NOW: " + unit.currentHealth);
                 projectiles.splice(projectiles.indexOf(this), 1);
                 if(unit.currentHealth <= 0){
                     dummies.splice(dummies.indexOf(unit), 1);
